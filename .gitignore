@@ -1,0 +1,51 @@
+# Ignore the local.properties file which contains local configuration data
+local.properties
+
+# Ignore Mac system files
+.DS_Store
+
+# Ignore IntelliJ IDEA project files
+.idea/
+
+# Ignore Android Studio specific files
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+
+# Ignore generated files
+*.apk
+*.ap_
+*.dex
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+*.hprof
+
+# Ignore backup files
+*.tmp
+*.temp
+*.swp
+
+# Ignore log files
+*.log
+
+# Ignore node_modules
+node_modules/
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
