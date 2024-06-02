@@ -1,4 +1,4 @@
-package com.adyen.postaptopay.presentation
+package com.adyen.postaptopay.presentation.viewmodels
 
 import android.app.Application
 import android.content.Intent
@@ -148,12 +148,7 @@ import java.time.format.DateTimeFormatter
 }*/
 
 
-import androidx.lifecycle.viewModelScope
-
 import com.adyen.postaptopay.util.DeepLinkUtils
-
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 class PaymentViewModel(application: Application) : AndroidViewModel(application) {

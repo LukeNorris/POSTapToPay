@@ -1,4 +1,4 @@
-package com.adyen.postaptopay.presentation
+package com.adyen.postaptopay.presentation.viewmodels
 
 import android.app.Application
 import android.content.Intent
@@ -153,9 +153,6 @@ import java.util.Base64
 
 
 import com.adyen.postaptopay.util.DeepLinkUtils
-
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class BoardingViewModel(application: Application) : AndroidViewModel(application) {
 
