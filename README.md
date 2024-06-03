@@ -11,8 +11,6 @@ ADYEN_API_KEY=your_api_key_here
 
 ADYEN_MERCHANT_ACCOUNT=your_merchant_account_here
 
-markdown
-Copy code
 
 ## How to Run
 
