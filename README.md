@@ -1,31 +1,33 @@
-# POS Tap to Pay App
+# POS Tap to Pay
 
-## Setup Instructions
+## Local Properties Setup
 
-To set up the project with your Adyen credentials, you need to add your API key and merchant account to the `local.properties` file.
+To run this project, you need to add your Adyen credentials to the `local.properties` file.
 
-### Step 1: Create or Update `local.properties` File
+1. Open the `local.properties` file (located in the root directory of the project).
+2. Add your Adyen API key and merchant account name:
 
-In the root directory of your project, locate the `local.properties` file. If it doesn't exist, create it manually.
+ADYEN_API_KEY=your_api_key_here
+ADYEN_MERCHANT_ACCOUNT=your_merchant_account_here
 
-### Step 2: Add Your Adyen Credentials
+markdown
+Copy code
 
-Open the `local.properties` file and add your Adyen API key and merchant account name as shown below:
-ADYEN_API_KEY=AQExhmfxL4LIaBNE...
+## How to Run
 
-ADYEN_MERCHANT_ACCOUNT=MyMerchantAccountName
+1. Clone the repository.
+2. Open the project in Android Studio.
+3. Ensure the `local.properties` file contains your Adyen credentials as described above.
+4. Build and run the project.
 
-### Note
+## Overview
 
-The `local.properties` file is included in the `.gitignore` file, so it won't be tracked by Git. This means that each person who clones the repository will need to create or update this file with their own Adyen credentials.
+This project follows Clean Architecture principles with a focus on separation of concerns. It consists of the following layers:
 
-### Example `local.properties` File
-sdk.dir=/path/to/android/sdk
+- **Data Layer**: Manages all data operations including API calls and local database access.
+- **Presentation Layer**: Handles the UI and user interactions using Jetpack Compose and ViewModel.
 
-ADYEN_API_KEY=AQExhmfxL4LIaBNE...
+## Notes
 
-ADYEN_MERCHANT_ACCOUNT=MyMerchantAccountName
-
-### Additional Information
-
-Ensure you do not commit your `local.properties` file to the repository as it contains sensitive information.
+- The `local.properties` file should not be included in version control and is listed in `.gitignore`.
+- Ensure you have the appropriate SDK and dependencies installed.
