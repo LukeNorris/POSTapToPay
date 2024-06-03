@@ -8,6 +8,7 @@ To run this project, you need to add your Adyen credentials to the `local.proper
 2. Add your Adyen API key and merchant account name:
 
 ADYEN_API_KEY=your_api_key_here
+
 ADYEN_MERCHANT_ACCOUNT=your_merchant_account_here
 
 markdown
