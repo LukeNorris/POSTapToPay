@@ -12,6 +12,7 @@ In the root directory of your project, locate the `local.properties` file. If it
 
 Open the `local.properties` file and add your Adyen API key and merchant account name as shown below:
 ADYEN_API_KEY=AQExhmfxL4LIaBNE...
+
 ADYEN_MERCHANT_ACCOUNT=MyMerchantAccountName
 
 ### Note
@@ -20,7 +21,9 @@ The `local.properties` file is included in the `.gitignore` file, so it won't be
 
 ### Example `local.properties` File
 sdk.dir=/path/to/android/sdk
+
 ADYEN_API_KEY=AQExhmfxL4LIaBNE...
+
 ADYEN_MERCHANT_ACCOUNT=MyMerchantAccountName
 
 ### Additional Information
