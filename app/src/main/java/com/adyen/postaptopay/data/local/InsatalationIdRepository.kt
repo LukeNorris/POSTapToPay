@@ -23,4 +23,8 @@ class InstallationIdRepository(context: Context) {
     fun clearInstallationId() {
         sharedPreferences.edit().remove(INSTALLATION_ID_KEY).apply()
     }
+    // For debugging: Clear all SharedPreferences
+    fun clearAllData() {
+        sharedPreferences.edit().clear().apply()
+    }
 }

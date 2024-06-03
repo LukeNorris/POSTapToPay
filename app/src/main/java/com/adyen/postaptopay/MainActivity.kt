@@ -65,6 +65,14 @@ class MainActivity : AppCompatActivity() {
         val installationId = queryParams["installationId"]
         val boarded = queryParams["boarded"]
         Log.d("DeepLinkResponse", "Boarding parameters: boardingRequestToken=$boardingRequestToken, installationId=$installationId, boarded=$boarded")
+
+        // Show toast for boarding result
+        if (boarded != null && boarded.toBoolean()) {
+            ToastUtils.showToast(this, "Boarding successful. Installation ID: $installationId")
+        } else {
+            ToastUtils.showToast(this, "Boarding failed or not completed.")
+        }
+
         boardingViewModel.handleDeepLinkResponse(boardingRequestToken, boarded, installationId, this)
     }
 
