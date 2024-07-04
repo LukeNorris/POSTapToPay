@@ -1,5 +1,4 @@
-// HomeScreen.kt
-package com.adyen.postaptopay.presentation
+package com.adyen.postaptopay.presentation.composables
 
 import android.os.Build
 import android.util.Log
@@ -14,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.adyen.postaptopay.presentation.viewmodels.BoardingViewModel
 import com.adyen.postaptopay.presentation.viewmodels.PaymentViewModel
 import com.adyen.postaptopay.util.ToastUtils
@@ -32,6 +32,8 @@ fun Home(
     val paymentIsLoading by paymentViewModel.paymentIsLoading.collectAsState()
     val paymentError by paymentViewModel.paymentError.collectAsState()
 
+    val price by paymentViewModel.price.collectAsState()
+
     if (isLoading || paymentIsLoading) {
         CircularProgressIndicator(modifier = Modifier.size(20.dp))
     } else {
@@ -42,10 +44,15 @@ fun Home(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(300.dp))
-            Text(
-                text = "Price: 12 EUR",
-                modifier = Modifier
+            Spacer(modifier = Modifier.height(200.dp))
+            Text("Enter Amount",
+                fontSize = 30.sp,
+                color = Color.Gray,
+            )
+            NumberInput(
+                value = price,
+                onValueChange = { paymentViewModel.updatePrice(it) },
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
             Column(
@@ -54,9 +61,26 @@ fun Home(
             ) {
                 Button(onClick = {
                     Log.d("Pay", "Pay button clicked")
-                    paymentViewModel.makePayment(activity)
+                    val priceValue = price.toDoubleOrNull()
+                    if (priceValue != null) {
+                        paymentViewModel.makePayment(activity, price, "Normal")
+                    } else {
+                        ToastUtils.showToast(activity, "Please enter a valid price", 5000)
+                    }
                 }) {
                     Text("Pay")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = {
+                    Log.d("Refund", "Refund button clicked")
+                    val priceValue = price.toDoubleOrNull()
+                    if (priceValue != null) {
+                        paymentViewModel.makePayment(activity, price, "Refund")
+                    } else {
+                        ToastUtils.showToast(activity, "Please enter a valid price", 5000)
+                    }
+                }) {
+                    Text("Refund")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {

@@ -8,7 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import com.adyen.postaptopay.presentation.Home
+import com.adyen.postaptopay.presentation.composables.Home
 import com.adyen.postaptopay.presentation.viewmodels.BoardingViewModel
 import com.adyen.postaptopay.presentation.viewmodels.PaymentViewModel
 import com.adyen.postaptopay.ui.theme.POSTapToPayTheme

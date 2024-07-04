@@ -23,6 +23,8 @@ class BoardingRepository {
         val jsonBody = JSONObject().put("boardingRequestToken", boardingRequestToken).toString()
         val body = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
+        Log.d("BoardingRepository", "generateBoardingToken: ")
+
         val request = Request.Builder()
             .url(url)
             .addHeader("x-api-key", BuildConfig.ADYEN_API_KEY)
