@@ -9,6 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.adyen.model.terminal.security.SecurityKey
 import com.adyen.postaptopay.data.local.InstallationIdRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import java.util.UUID
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import com.adyen.postaptopay.util.DeepLinkUtils
+import com.adyen.postaptopay.util.TerminalCryptoHandler
 
 class PaymentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -35,9 +37,26 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
     private val _price = MutableStateFlow("")
     val price: StateFlow<String> = _price
 
+
+
+    // Initialize SecurityKey with appropriate values
+    private val securityKey = com.adyen.postaptopay.util.SecurityKey(
+        passphrase = "yourPassphrase",
+        keyIdentifier = "yourKeyIdentifier",
+        keyVersion = 1,
+        adyenCryptoVersion = 1
+    )
+
+    // Initialize TerminalCryptoHandler
+   // private val terminalCryptoHandler = TerminalCryptoHandler(securityKey)
+
+
+
     fun updatePrice(newPrice: String) {
         _price.value = newPrice
     }
+
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -54,6 +73,10 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 Log.d("PaymentViewModel", "Making a payment initiated.")
                 val nexoRequest = generateNexoRequest("Luke's cash register", installationId, "EUR", requestedAmount, paymentType)
+
+                //encrypt the JSON and pass it into the createPaymentLink function here
+                //val encryptedRequest = terminalCryptoHandler.encryptRequest(nexoRequest)
+
                 Log.d("PaymentViewModel", "Generated nexo request: $nexoRequest")
                 createPaymentLink(nexoRequest = nexoRequest, activity)
             }
@@ -64,7 +87,9 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
     private fun createPaymentLink(nexoRequest: String, activity: AppCompatActivity) {
         val returnUrl = "merchantscheme://com.merchant.companion/payment"
         val returnUrlEncoded = URLEncoder.encode(returnUrl, Charsets.UTF_8.name())
+
         val nexoRequestBase64 = Base64.getEncoder().encodeToString(nexoRequest.toByteArray())
+
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse("adyenpayments://nexo?request=$nexoRequestBase64&returnUrl=$returnUrlEncoded")
         }

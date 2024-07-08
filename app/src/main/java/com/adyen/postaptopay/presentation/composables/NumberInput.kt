@@ -31,7 +31,7 @@ fun NumberInput(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .fillMaxWidth()
+            .width(100.dp)
             .padding(horizontal = 16.dp)
     ) {
         Text(

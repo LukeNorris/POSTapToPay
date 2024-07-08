@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adyen.postaptopay.presentation.viewmodels.BoardingViewModel
 import com.adyen.postaptopay.presentation.viewmodels.PaymentViewModel
+import com.adyen.postaptopay.ui.theme.POSTapToPayTheme
 import com.adyen.postaptopay.util.ToastUtils
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -25,79 +26,94 @@ fun Home(
     paymentViewModel: PaymentViewModel,
     activity: AppCompatActivity
 ) {
-    val apiResponse by boardingViewModel.apiResponse.collectAsState(initial = null)
-    val isLoading by boardingViewModel.isLoading.collectAsState()
-    val error by boardingViewModel.error.collectAsState()
+    POSTapToPayTheme {
+        val apiResponse by boardingViewModel.apiResponse.collectAsState(initial = null)
+        val isLoading by boardingViewModel.isLoading.collectAsState()
+        val error by boardingViewModel.error.collectAsState()
 
-    val paymentIsLoading by paymentViewModel.paymentIsLoading.collectAsState()
-    val paymentError by paymentViewModel.paymentError.collectAsState()
+        val paymentIsLoading by paymentViewModel.paymentIsLoading.collectAsState()
+        val paymentError by paymentViewModel.paymentError.collectAsState()
 
-    val price by paymentViewModel.price.collectAsState()
+        val price by paymentViewModel.price.collectAsState()
 
-    if (isLoading || paymentIsLoading) {
-        CircularProgressIndicator(modifier = Modifier.size(20.dp))
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(200.dp))
-            Text("Enter Amount",
-                fontSize = 30.sp,
-                color = Color.Gray,
-            )
-            NumberInput(
-                value = price,
-                onValueChange = { paymentViewModel.updatePrice(it) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+        if (isLoading || paymentIsLoading) {
+            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+        } else {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(onClick = {
-                    Log.d("Pay", "Pay button clicked")
-                    val priceValue = price.toDoubleOrNull()
-                    if (priceValue != null) {
-                        paymentViewModel.makePayment(activity, price, "Normal")
-                    } else {
-                        ToastUtils.showToast(activity, "Please enter a valid price", 5000)
-                    }
-                }) {
-                    Text("Pay")
-                }
+                Spacer(modifier = Modifier.height(100.dp))
+                Text("Enter Amount",
+                    fontSize = 30.sp,
+                    color = Color.Gray,
+                )
+                NumberInput(
+                    value = price,
+                    onValueChange = { paymentViewModel.updatePrice(it) },
+                    modifier = Modifier.width(220.dp)
+                )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {
-                    Log.d("Refund", "Refund button clicked")
-                    val priceValue = price.toDoubleOrNull()
-                    if (priceValue != null) {
-                        paymentViewModel.makePayment(activity, price, "Refund")
-                    } else {
-                        ToastUtils.showToast(activity, "Please enter a valid price", 5000)
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(
+                        onClick = {
+                            Log.d("Pay", "Pay button clicked")
+                            val priceValue = price.toDoubleOrNull()
+                            if (priceValue != null) {
+                                paymentViewModel.makePayment(activity, price, "Normal")
+                            } else {
+                                ToastUtils.showToast(activity, "Please enter a valid price", 5000)
+                            }
+                        },
+                        modifier = Modifier.width(200.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Pay", color = MaterialTheme.colorScheme.onPrimary)
                     }
-                }) {
-                    Text("Refund")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {
-                    boardingViewModel.checkBoardingStatus(activity)
-                }) {
-                    Text("Boarding check")
-                }
-                error?.let {
-                    Text("Error: $it", color = Color.Red)
-                    ToastUtils.showToast(activity, "Error: $it", 5000)
-                } ?: paymentError?.let {
-                    Text("Error: $it", color = Color.Red)
-                    ToastUtils.showToast(activity, "Payment Error: $it", 5000)
-                } ?: apiResponse?.let {
-                    Text("Boarding successful.")
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Filter logcat for BoardingRepository to see installationId and boardingToken from Adyen")
+                    Button(
+                        onClick = {
+                            Log.d("Refund", "Refund button clicked")
+                            val priceValue = price.toDoubleOrNull()
+                            if (priceValue != null) {
+                                paymentViewModel.makePayment(activity, price, "Refund")
+                            } else {
+                                ToastUtils.showToast(activity, "Please enter a valid price", 5000)
+                            }
+                        },
+                        modifier = Modifier.width(200.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Refund", color = MaterialTheme.colorScheme.onPrimary)
+                    }
+                    Spacer(modifier = Modifier.height(200.dp))
+                    Button(
+                        onClick = {
+                            boardingViewModel.checkBoardingStatus(activity)
+                        },
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.width(200.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Boarding check", color = MaterialTheme.colorScheme.onPrimary)
+                    }
+                    error?.let {
+                        Text("Error: $it", color = Color.Red)
+                        ToastUtils.showToast(activity, "Error: $it", 5000)
+                    } ?: paymentError?.let {
+                        Text("Error: $it", color = Color.Red)
+                        ToastUtils.showToast(activity, "Payment Error: $it", 5000)
+                    } ?: apiResponse?.let {
+                        Text("Boarding successful.")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Filter logcat for BoardingRepository to see installationId and boardingToken from Adyen")
+                    }
                 }
             }
         }
