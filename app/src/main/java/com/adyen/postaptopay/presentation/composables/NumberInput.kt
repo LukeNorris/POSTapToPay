@@ -31,7 +31,7 @@ fun NumberInput(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .width(100.dp)
+            .width(150.dp)
             .padding(horizontal = 16.dp)
     ) {
         Text(
@@ -42,7 +42,7 @@ fun NumberInput(
         Box(
             modifier = Modifier
                 .weight(1f)
-                .border(BorderStroke(1.dp, Color.Gray), shape = MaterialTheme.shapes.small)
+                .border(BorderStroke(1.dp, Color.Transparent), shape = MaterialTheme.shapes.medium)
                 .padding(8.dp)
         ) {
             BasicTextField(
@@ -62,7 +62,7 @@ fun NumberInput(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done
                 ),
-                textStyle = LocalTextStyle.current.copy(fontSize = 40.sp, textAlign = TextAlign.Start),
+                textStyle = LocalTextStyle.current.copy(fontSize = 60.sp, textAlign = TextAlign.Start),
                 singleLine = true,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -71,7 +71,7 @@ fun NumberInput(
             if (textFieldValue.isEmpty()) {
                 Text(
                     text = "0.00",
-                    fontSize = 40.sp,
+                    fontSize = 60.sp,
                     color = Color.Gray,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )

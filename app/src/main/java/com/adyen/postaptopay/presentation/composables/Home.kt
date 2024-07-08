@@ -54,9 +54,9 @@ fun Home(
                 NumberInput(
                     value = price,
                     onValueChange = { paymentViewModel.updatePrice(it) },
-                    modifier = Modifier.width(220.dp)
+                    modifier = Modifier.width(260.dp)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(30.dp))
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -71,12 +71,17 @@ fun Home(
                                 ToastUtils.showToast(activity, "Please enter a valid price", 5000)
                             }
                         },
-                        modifier = Modifier.width(200.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        modifier = Modifier
+                            .width(250.dp)
+                            .height(60.dp), // Increase the height
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
-                        Text("Pay", color = MaterialTheme.colorScheme.onPrimary)
+                        Text("PAY",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 25.sp // Increase the text size
+                        )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(30.dp))
                     Button(
                         onClick = {
                             Log.d("Refund", "Refund button clicked")
@@ -87,19 +92,24 @@ fun Home(
                                 ToastUtils.showToast(activity, "Please enter a valid price", 5000)
                             }
                         },
-                        modifier = Modifier.width(200.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        modifier = Modifier
+                            .width(250.dp)
+                            .height(60.dp), // Increase the height
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
-                        Text("Refund", color = MaterialTheme.colorScheme.onPrimary)
+                        Text("REFUND",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 25.sp // Increase the text size
+                        )
                     }
-                    Spacer(modifier = Modifier.height(200.dp))
+                    Spacer(modifier = Modifier.height(120.dp))
                     Button(
                         onClick = {
                             boardingViewModel.checkBoardingStatus(activity)
                         },
                         shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.width(200.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        modifier = Modifier.width(150.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                     ) {
                         Text("Boarding check", color = MaterialTheme.colorScheme.onPrimary)
                     }
