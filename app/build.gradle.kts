@@ -31,6 +31,9 @@ android {
         }
         buildConfigField("String", "ADYEN_API_KEY", "\"${localProperties["ADYEN_API_KEY"]}\"")
         buildConfigField("String", "ADYEN_MERCHANT_ACCOUNT", "\"${localProperties["ADYEN_MERCHANT_ACCOUNT"]}\"")
+        buildConfigField("String", "PASSPHRASE", "\"${localProperties["PASSPHRASE"]}\"")
+        buildConfigField("String", "KEY_IDENTIFIER", "\"${localProperties["KEY_IDENTIFIER"]}\"")
+        buildConfigField("String", "KEY_VERSION", "\"${localProperties["KEY_VERSION"]}\"")
     }
 
     buildTypes {
@@ -82,6 +85,11 @@ dependencies {
     implementation("org.json:json:20210307")
     implementation("com.google.code.gson:gson:2.8.6")
     implementation("com.adyen:adyen-java-api-library:5.0.0")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.69")
+    implementation("commons-codec:commons-codec:1.15")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+    implementation("org.glassfish:javax.json:1.1.4")
+    implementation("org.json:json:20210307")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

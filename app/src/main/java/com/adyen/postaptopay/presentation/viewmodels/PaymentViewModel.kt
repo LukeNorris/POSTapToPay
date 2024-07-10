@@ -9,7 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.adyen.model.terminal.security.SecurityKey
+import com.adyen.postaptopay.BuildConfig
 import com.adyen.postaptopay.data.local.InstallationIdRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +22,7 @@ import java.util.UUID
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import com.adyen.postaptopay.util.DeepLinkUtils
-import com.adyen.postaptopay.util.TerminalCryptoHandler
+import com.adyen.postaptopay.util.NexoCrypto
 
 class PaymentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -36,19 +36,6 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
 
     private val _price = MutableStateFlow("")
     val price: StateFlow<String> = _price
-
-
-
-    // Initialize SecurityKey with appropriate values
-    private val securityKey = com.adyen.postaptopay.util.SecurityKey(
-        passphrase = "yourPassphrase",
-        keyIdentifier = "yourKeyIdentifier",
-        keyVersion = 1,
-        adyenCryptoVersion = 1
-    )
-
-    // Initialize TerminalCryptoHandler
-   // private val terminalCryptoHandler = TerminalCryptoHandler(securityKey)
 
 
 
@@ -67,6 +54,15 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
             val installationId = withContext(Dispatchers.IO) {
                 installationIdRepository.getInstallationId()
             }
+
+            val passphrase = BuildConfig.PASSPHRASE.toCharArray()
+            val keyId = BuildConfig.KEY_IDENTIFIER
+            val keyVersion = BuildConfig.KEY_VERSION.toLong()
+
+            // Initialize NexoCrypto
+            val nexoCrypto = NexoCrypto(passphrase)
+
+
             Log.d("PaymentViewModel", "Current Installation ID: $installationId")
             if (installationId.isNullOrEmpty()) {
                 Log.d("PaymentViewModel", "Installation ID is empty. Cannot create nexo request without.")
