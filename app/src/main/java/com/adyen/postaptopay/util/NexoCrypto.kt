@@ -2,7 +2,6 @@ package com.adyen.postaptopay.util
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.adyen.postaptopay.BuildConfig
 import java.io.*
 import java.security.*
 import java.security.spec.*
@@ -11,12 +10,14 @@ import javax.crypto.*
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
-import javax.json.*
+import javax.json.Json
+import javax.json.JsonObject
+import javax.json.JsonReader
+import javax.json.JsonString
+import javax.json.JsonWriter
 import kotlin.experimental.xor
 
-class NexoCrypto {
-
-    private var derivedKeys: NexoDerivedKeys? = null
+class NexoCrypto(private val passphrase: CharArray) {
 
     companion object {
         const val NEXO_HMAC_KEY_LENGTH = 32
@@ -27,23 +28,22 @@ class NexoCrypto {
         fun deriveKeyMaterial(passphrase: CharArray): ByteArray {
             val salt = "AdyenNexoV1Salt".toByteArray()
             val iterations = 4000
-            val spec = PBEKeySpec(
-                passphrase, salt, iterations, (NEXO_HMAC_KEY_LENGTH +
-                        NEXO_CIPHER_KEY_LENGTH + NEXO_IV_LENGTH) * 8
-            )
+            val spec = PBEKeySpec(passphrase, salt, iterations, (NEXO_HMAC_KEY_LENGTH +
+                    NEXO_CIPHER_KEY_LENGTH + NEXO_IV_LENGTH) * 8)
             val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
             return skf.generateSecret(spec).encoded
         }
     }
 
+    private val derivedKeys: NexoDerivedKeys
+
     inner class NexoDerivedKeys(keyMaterial: ByteArray) {
-        var hmac_key = keyMaterial.copyOfRange(0, NEXO_HMAC_KEY_LENGTH)
-        var cipher_key = keyMaterial.copyOfRange(NEXO_HMAC_KEY_LENGTH, NEXO_HMAC_KEY_LENGTH + NEXO_CIPHER_KEY_LENGTH)
-        var iv = keyMaterial.copyOfRange(NEXO_HMAC_KEY_LENGTH + NEXO_CIPHER_KEY_LENGTH, keyMaterial.size)
+        val hmac_key = keyMaterial.copyOfRange(0, NEXO_HMAC_KEY_LENGTH)
+        val cipher_key = keyMaterial.copyOfRange(NEXO_HMAC_KEY_LENGTH, NEXO_HMAC_KEY_LENGTH + NEXO_CIPHER_KEY_LENGTH)
+        val iv = keyMaterial.copyOfRange(NEXO_HMAC_KEY_LENGTH + NEXO_CIPHER_KEY_LENGTH, keyMaterial.size)
     }
 
-    @Throws(NoSuchAlgorithmException::class, InvalidKeySpecException::class)
-    constructor(passphrase: CharArray) {
+    init {
         val keyMaterial = deriveKeyMaterial(passphrase)
         derivedKeys = NexoDerivedKeys(keyMaterial)
     }
@@ -95,10 +95,10 @@ class NexoCrypto {
         val messageheader = saletopoirequest!!.getJsonObject("MessageHeader")
 
         val ivmod = ByteArray(NEXO_IV_LENGTH)
-        Random().nextBytes(ivmod)
+        java.util.Random().nextBytes(ivmod)
 
-        val encbytes = crypt(input, derivedKeys!!, ivmod, Cipher.ENCRYPT_MODE)
-        val hmac = hmac(input, derivedKeys!!)
+        val encbytes = crypt(input, derivedKeys, ivmod, Cipher.ENCRYPT_MODE)
+        val hmac = hmac(input, derivedKeys)
 
         val msg = Json.createObjectBuilder()
             .add("MessageHeader", messageheader)
@@ -124,12 +124,10 @@ class NexoCrypto {
         }
     }
 
-    inner class BytesAndOuterHeader(val packet: ByteArray, val outer_header: JsonObject)
-
     @RequiresApi(Build.VERSION_CODES.O)
     @Throws(
-        InvalidKeyException::class, NoSuchAlgorithmException::class,
-        IOException::class, NoSuchPaddingException::class, IllegalBlockSizeException::class,
+        InvalidKeyException::class, NoSuchAlgorithmException::class, IOException::class,
+        NoSuchPaddingException::class, IllegalBlockSizeException::class,
         BadPaddingException::class, InvalidAlgorithmParameterException::class
     )
     fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
@@ -166,7 +164,7 @@ class NexoCrypto {
         val b64 = jsonTrailer.getJsonString("Hmac")
             ?: throw IOException("Hmac not found")
 
-        val dk = NexoDerivedKeys(NexoCrypto.deriveKeyMaterial(passphrase = BuildConfig.PASSPHRASE.toCharArray())) // derive key material directly
+        val dk = NexoDerivedKeys(deriveKeyMaterial(passphrase))
 
         val ivmod = b64dec.decode(nonce.string)
         val ret = crypt(ciphertext, dk, ivmod, Cipher.DECRYPT_MODE)
@@ -179,6 +177,8 @@ class NexoCrypto {
 
         return BytesAndOuterHeader(ret, messageheader)
     }
+
+    inner class BytesAndOuterHeader(val packet: ByteArray, val outer_header: JsonObject)
 
     fun validateInnerAndOuterHeader(inner: JsonObject?, outer: JsonObject?): Boolean {
         if (inner == null || outer == null) {

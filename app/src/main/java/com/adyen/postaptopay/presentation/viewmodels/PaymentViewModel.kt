@@ -68,7 +68,7 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                 Log.d("PaymentViewModel", "Installation ID is empty. Cannot create nexo request without.")
             } else {
                 Log.d("PaymentViewModel", "Making a payment initiated.")
-                val nexoRequest = generateNexoRequest("Luke's cash register", installationId, "EUR", requestedAmount, paymentType)
+                val nexoRequest = generateNexoRequest("My cash register", installationId, "EUR", requestedAmount, paymentType)
 
                 //encrypt the JSON and pass it into the createPaymentLink function here
                 //val encryptedRequest = terminalCryptoHandler.encryptRequest(nexoRequest)
