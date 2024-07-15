@@ -12,9 +12,6 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import javax.json.Json
 import javax.json.JsonObject
-import javax.json.JsonReader
-import javax.json.JsonString
-import javax.json.JsonWriter
 import kotlin.experimental.xor
 
 class NexoCrypto(private val passphrase: CharArray) {
@@ -81,6 +78,8 @@ class NexoCrypto(private val passphrase: CharArray) {
         NoSuchPaddingException::class, IllegalBlockSizeException::class,
         BadPaddingException::class, InvalidAlgorithmParameterException::class
     )
+
+    //Encrypt the Nexo request
     fun encrypt_and_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): ByteArray {
         val encb64 = Base64.getEncoder()
 
@@ -130,6 +129,8 @@ class NexoCrypto(private val passphrase: CharArray) {
         NoSuchPaddingException::class, IllegalBlockSizeException::class,
         BadPaddingException::class, InvalidAlgorithmParameterException::class
     )
+
+    //decript the nexo response from te terminal
     fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
         val b64dec = Base64.getDecoder()
         val stream = ByteArrayInputStream(input)
