@@ -13,6 +13,7 @@ import com.adyen.postaptopay.presentation.viewmodels.BoardingViewModel
 import com.adyen.postaptopay.presentation.viewmodels.PaymentViewModel
 import com.adyen.postaptopay.ui.theme.POSTapToPayTheme
 import com.adyen.postaptopay.util.DeepLinkUtils
+import com.adyen.postaptopay.util.NexoCrypto
 import com.adyen.postaptopay.util.ToastUtils
 import org.json.JSONObject
 import java.util.Base64
@@ -50,7 +51,10 @@ class MainActivity : AppCompatActivity() {
                 it.containsKey("response") -> handlePaymentDeepLink(it)
                 else -> {
                     Log.d("DeepLinkResponse", "Unknown deep link host or missing query parameters.")
-                    ToastUtils.showToast(this, "Unknown deep link host or missing query parameters.")
+                    ToastUtils.showToast(
+                        this,
+                        "Unknown deep link host or missing query parameters."
+                    )
                 }
             }
         } ?: run {
@@ -64,7 +68,10 @@ class MainActivity : AppCompatActivity() {
         val boardingRequestToken = queryParams["boardingRequestToken"]
         val installationId = queryParams["installationId"]
         val boarded = queryParams["boarded"]
-        Log.d("DeepLinkResponse", "Boarding parameters: boardingRequestToken=$boardingRequestToken, installationId=$installationId, boarded=$boarded")
+        Log.d(
+            "DeepLinkResponse",
+            "Boarding parameters: boardingRequestToken=$boardingRequestToken, installationId=$installationId, boarded=$boarded"
+        )
 
         // Show toast for boarding result
         if (boarded != null && boarded.toBoolean()) {
@@ -73,7 +80,12 @@ class MainActivity : AppCompatActivity() {
             ToastUtils.showToast(this, "Boarding failed or not completed.")
         }
 
-        boardingViewModel.handleDeepLinkResponse(boardingRequestToken, boarded, installationId, this)
+        boardingViewModel.handleDeepLinkResponse(
+            boardingRequestToken,
+            boarded,
+            installationId,
+            this
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -82,12 +94,28 @@ class MainActivity : AppCompatActivity() {
         val error = queryParams["error"]
 
         response?.let {
+            Log.d("handlePaymentDeepLink", "response: $it")
+//            val responseList = it.chunked(800)
+//            responseList.forEach { partialString ->
+//                Log.d("handlePaymentDeepLink", partialString)
+//            }
+
             try {
-                val firstDecodedResponse = String(Base64.getDecoder().decode(it), Charsets.UTF_8)
-                val secondDecodedResponse = String(Base64.getDecoder().decode(firstDecodedResponse), Charsets.UTF_8)
-                val jsonResponse = JSONObject(secondDecodedResponse)
+                val decodedResponse = String(Base64.getDecoder().decode(it), Charsets.UTF_8)
+                Log.d("handlePaymentDeepLink", "Decoded Response: $decodedResponse")
+
+                val jsonResponse = JSONObject(decodedResponse)
                 val saleToPOIResponse = jsonResponse.getJSONObject("SaleToPOIResponse")
                 val paymentResponse = saleToPOIResponse.getJSONObject("PaymentResponse")
+
+//                // Decrypt and validate HMAC signature
+//                val nexoCrypto = NexoCrypto(BuildConfig.PASSPHRASE.toCharArray())
+//                val decryptedResponse = nexoCrypto.decrypt_and_validate_hmac(
+//                    input = jsonResponse.toString().toByteArray(),
+//                    keyIdentifier = BuildConfig.KEY_IDENTIFIER,
+//                    keyVersion = BuildConfig.KEY_VERSION.toLong()
+//                )
+//                Log.d("handlePaymentDeepLink", "Decrypted response: $decryptedResponse")
 
                 if (paymentResponse.has("Response")) {
                     val responseObj = paymentResponse.getJSONObject("Response")
