@@ -60,8 +60,15 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun handleDeepLinkResponse(boardingRequestToken: String?, boarded: String?, installationId: String?, activity: AppCompatActivity) {
-        Log.d("BoardingViewModel", "Handling deep link response. BoardingRequestToken: $boardingRequestToken, InstallationId: $installationId, Boarded: $boarded")
+    fun handleDeepLinkResponse(queryParams: Map<String, String>, activity: AppCompatActivity) {
+        val boardingRequestToken = queryParams["boardingRequestToken"]
+        val installationId = queryParams["installationId"]
+        val boarded = queryParams["boarded"]
+        Log.d(
+            "DeepLinkResponse",
+            "Boarding parameters: boardingRequestToken=$boardingRequestToken, installationId=$installationId, boarded=$boarded"
+        )
+
         when (boarded) {
             "true" -> {
                 Log.d("BoardingViewModel", "App is already boarded. Boarded parameter in URL is true")
@@ -146,3 +153,4 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
         DeepLinkUtils.openDeepLink(activity, intent.data!!)
     }
 }
+

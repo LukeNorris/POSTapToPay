@@ -23,6 +23,8 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import com.adyen.postaptopay.util.DeepLinkUtils
 import com.adyen.postaptopay.util.NexoCrypto
+import com.adyen.postaptopay.util.ToastUtils
+import org.json.JSONObject
 
 class PaymentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -85,7 +87,6 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
             BuildConfig.KEY_VERSION.toLong()
         )
 
-//        val nexoRequestBase64 = Base64.getEncoder().encodeToString(nexoRequest.toByteArray())
         val nexoRequestBase64 = Base64.getEncoder().encodeToString(encryptedNexoRequest)
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -97,17 +98,36 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun handleDeepLinkResponse(response: String? = null, error: String? = null) {
-        Log.d("PaymentViewModel", "Handling deep link response. Response: $response, error: $error")
-        if (!response.isNullOrEmpty()) {
-            Log.d("PaymentViewModel", "Received payment response: $response")
-            // Handle the response from the payment here
-        } else if (!error.isNullOrEmpty()) {
-            Log.e("PaymentViewModel", "Received error from deep link response: $error")
-            _error.value = error
-        } else {
-            Log.e("PaymentViewModel", "Unhandled deep link response: no response or error provided.")
-            _error.value = "Unhandled deep link response."
+    fun handleDeepLinkResponse(queryParams: Map<String, String>) {
+        val response = queryParams["response"]
+        val error = queryParams["error"]
+
+        response?.let {
+            Log.d("handlePaymentDeepLink", "response: $it")
+
+            try {
+                val decodedResponse = String(Base64.getDecoder().decode(it), Charsets.UTF_8)
+                Log.d("handlePaymentDeepLink", "Decoded Response: $decodedResponse")
+
+                val jsonResponse = JSONObject(decodedResponse)
+                val saleToPOIResponse = jsonResponse.getJSONObject("SaleToPOIResponse")
+                val paymentResponse = saleToPOIResponse.optJSONObject("PaymentResponse")
+                val nexoBlob = saleToPOIResponse.getString("NexoBlob")
+                Log.d("handlePaymentDeepLink", "NexoBlob: $nexoBlob")
+                Log.d("handlePaymentDeepLink", "paymentResponse: $paymentResponse")
+
+                if (paymentResponse?.has("Response") == true) {
+                    val responseObj = paymentResponse.getJSONObject("Response")
+                    val result = responseObj.getString("Result")
+                    ToastUtils.showToast(getApplication(), "Result: $result")
+                } else {
+                    ToastUtils.showToast(getApplication(), "No 'Response' found in PaymentResponse")
+                }
+            } catch (e: Exception) {
+                ToastUtils.showToast(getApplication(), "Error parsing response: ${e.message}")
+            }
+        } ?: run {
+            ToastUtils.showToast(getApplication(), "Response is null")
         }
     }
 
