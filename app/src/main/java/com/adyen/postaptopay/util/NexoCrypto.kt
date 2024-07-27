@@ -1,7 +1,9 @@
 package com.adyen.postaptopay.util
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import org.json.JSONObject
 import java.io.*
 import java.security.*
 import java.security.spec.*
@@ -131,7 +133,7 @@ class NexoCrypto(private val passphrase: CharArray) {
     )
 
     //decript the nexo response from te terminal
-    fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
+    /*fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
         val b64dec = Base64.getDecoder()
         val stream = ByteArrayInputStream(input)
         val jsonreader = Json.createReader(stream)
@@ -152,6 +154,8 @@ class NexoCrypto(private val passphrase: CharArray) {
 
         val jsonTrailer = saletopoirequest.getJsonObject("SecurityTrailer")
             ?: throw IOException("SecurityTrailer not found")
+
+        Log.d("NexoCrypto", "jsonTrailer $jsonTrailer")
         val version = jsonTrailer.getJsonNumber("AdyenCryptoVersion")
         if (version == null || version.intValue() != 1) {
             throw IOException("AdyenCryptoVersion version not found or not supported")
@@ -177,7 +181,74 @@ class NexoCrypto(private val passphrase: CharArray) {
         }
 
         return BytesAndOuterHeader(ret, messageheader)
+    }*/
+
+    fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
+        val b64dec = Base64.getDecoder()
+        val stream = ByteArrayInputStream(input)
+        val jsonreader = Json.createReader(stream)
+        val total = jsonreader.readObject() ?: throw IOException("Faulty JSON")
+        var saletopoirequest = total.getJsonObject("SaleToPOIRequest")
+        if (saletopoirequest == null) {
+            saletopoirequest = total.getJsonObject("SaleToPOIResponse")
+        }
+        if (saletopoirequest == null) {
+            throw IOException("No SaleToPOIRequest or SaleToPOIResponse")
+        }
+        val messageheader = saletopoirequest.getJsonObject("MessageHeader")
+            ?: throw IOException("MessageHeader not found")
+
+        val payload = saletopoirequest.getJsonString("NexoBlob")
+            ?: throw IOException("NexoBlob not found")
+        val ciphertext = b64dec.decode(payload.string)
+
+        val jsonTrailer = saletopoirequest.getJsonObject("SecurityTrailer")
+            ?: throw IOException("SecurityTrailer not found")
+
+        // Convert to mutable JSON object
+        val mutableJsonTrailer = JSONObject(jsonTrailer.toString())
+
+        if (!mutableJsonTrailer.has("AdyenCryptoVersion")) {
+            Log.d("NexoCrypto", "Adding missing AdyenCryptoVersion")
+            mutableJsonTrailer.put("AdyenCryptoVersion", 1)
+        }
+        if (!mutableJsonTrailer.has("KeyIdentifier")) {
+            Log.d("NexoCrypto", "Adding missing KeyIdentifier")
+            mutableJsonTrailer.put("KeyIdentifier", keyIdentifier)
+        }
+        if (!mutableJsonTrailer.has("KeyVersion")) {
+            Log.d("NexoCrypto", "Adding missing KeyVersion")
+            mutableJsonTrailer.put("KeyVersion", keyVersion)
+        }
+
+        Log.d("NexoCrypto", "jsonTrailer $mutableJsonTrailer")
+        val version = mutableJsonTrailer.getInt("AdyenCryptoVersion")
+        if (version != 1) {
+            throw IOException("AdyenCryptoVersion version not found or not supported")
+        }
+        val nonce = mutableJsonTrailer.getString("Nonce")
+            ?: throw IOException("Nonce not found")
+        val keyId = mutableJsonTrailer.getString("KeyIdentifier")
+            ?: throw IOException("KeyIdentifier not found")
+        val kversion = mutableJsonTrailer.getInt("KeyVersion")
+            ?: throw IOException("KeyVersion not found")
+        val b64 = mutableJsonTrailer.getString("Hmac")
+            ?: throw IOException("Hmac not found")
+
+        val dk = NexoDerivedKeys(deriveKeyMaterial(passphrase))
+
+        val ivmod = b64dec.decode(nonce)
+        val ret = crypt(ciphertext, dk, ivmod, Cipher.DECRYPT_MODE)
+
+        val receivedmac = b64dec.decode(b64)
+        val computedHmac = hmac(ret, dk)
+        if (!MessageDigest.isEqual(receivedmac, computedHmac)) {
+            throw IOException("Validation failed")
+        }
+
+        return BytesAndOuterHeader(ret, messageheader)
     }
+
 
     inner class BytesAndOuterHeader(val packet: ByteArray, val outer_header: JsonObject)
 
@@ -198,3 +269,4 @@ class NexoCrypto(private val passphrase: CharArray) {
         return true
     }
 }
+
