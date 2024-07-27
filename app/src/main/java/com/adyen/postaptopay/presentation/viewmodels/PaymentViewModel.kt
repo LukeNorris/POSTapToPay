@@ -80,7 +80,18 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                     if (paymentResponse?.has("Response") == true) {
                         val responseObj = paymentResponse.getJSONObject("Response")
                         val result = responseObj.getString("Result")
-                        ToastUtils.showToast(getApplication(), "Result: $result")
+
+                        val paymentResult = paymentResponse.optJSONObject("PaymentResult")
+                        val amountsResp = paymentResult?.optJSONObject("AmountsResp")
+                        val authorizedAmount = amountsResp?.optDouble("AuthorizedAmount")
+                        val currency = amountsResp?.optString("Currency")
+
+                        val toastMessage = StringBuilder("Result: $result")
+                        if (authorizedAmount != null && currency != null) {
+                            toastMessage.append("\nAuthorized Amount: $authorizedAmount\nCurrency: $currency")
+                        }
+
+                        ToastUtils.showToast(getApplication(), toastMessage.toString())
                     } else {
                         ToastUtils.showToast(getApplication(), "No 'Response' found in PaymentResponse")
                     }
@@ -92,6 +103,8 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
             _error.value = "Response is null"
         }
     }
+
+
 
 
 
