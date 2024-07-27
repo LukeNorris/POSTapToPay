@@ -32,4 +32,5 @@ KEY_VERSION=1
 ## Notes
 
 - The `local.properties` file should not be included in version control and is listed in `.gitignore`.
-- Ensure you have the appropriate SDK and dependencies installed.
+- Ensure you have the appropriate SDK and dependencies installed. 
+- In this demo app, the boarding API call to Adyen in data/remote/BoardingRepository.kt should ideally be made from a server rather than directly from the app for best practice.
