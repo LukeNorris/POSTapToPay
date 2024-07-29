@@ -132,57 +132,6 @@ class NexoCrypto(private val passphrase: CharArray) {
         BadPaddingException::class, InvalidAlgorithmParameterException::class
     )
 
-    //decript the nexo response from te terminal
-    /*fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
-        val b64dec = Base64.getDecoder()
-        val stream = ByteArrayInputStream(input)
-        val jsonreader = Json.createReader(stream)
-        val total = jsonreader.readObject() ?: throw IOException("Faulty JSON")
-        var saletopoirequest = total.getJsonObject("SaleToPOIRequest")
-        if (saletopoirequest == null) {
-            saletopoirequest = total.getJsonObject("SaleToPOIResponse")
-        }
-        if (saletopoirequest == null) {
-            throw IOException("No SaleToPOIRequest or SaleToPOIResponse")
-        }
-        val messageheader = saletopoirequest.getJsonObject("MessageHeader")
-            ?: throw IOException("MessageHeader not found")
-
-        val payload = saletopoirequest.getJsonString("NexoBlob")
-            ?: throw IOException("NexoBlob not found")
-        val ciphertext = b64dec.decode(payload.string)
-
-        val jsonTrailer = saletopoirequest.getJsonObject("SecurityTrailer")
-            ?: throw IOException("SecurityTrailer not found")
-
-        Log.d("NexoCrypto", "jsonTrailer $jsonTrailer")
-        val version = jsonTrailer.getJsonNumber("AdyenCryptoVersion")
-        if (version == null || version.intValue() != 1) {
-            throw IOException("AdyenCryptoVersion version not found or not supported")
-        }
-        val nonce = jsonTrailer.getJsonString("Nonce")
-            ?: throw IOException("Nonce not found")
-        val keyId = jsonTrailer.getJsonString("KeyIdentifier")
-            ?: throw IOException("KeyIdentifier not found")
-        val kversion = jsonTrailer.getJsonNumber("KeyVersion")
-            ?: throw IOException("KeyVersion not found")
-        val b64 = jsonTrailer.getJsonString("Hmac")
-            ?: throw IOException("Hmac not found")
-
-        val dk = NexoDerivedKeys(deriveKeyMaterial(passphrase))
-
-        val ivmod = b64dec.decode(nonce.string)
-        val ret = crypt(ciphertext, dk, ivmod, Cipher.DECRYPT_MODE)
-
-        val receivedmac = b64dec.decode(b64.string)
-        val computedHmac = hmac(ret, dk)
-        if (!MessageDigest.isEqual(receivedmac, computedHmac)) {
-            throw IOException("Validation failed")
-        }
-
-        return BytesAndOuterHeader(ret, messageheader)
-    }*/
-
     fun decrypt_and_validate_hmac(input: ByteArray, keyIdentifier: String, keyVersion: Long): BytesAndOuterHeader {
         val b64dec = Base64.getDecoder()
         val stream = ByteArrayInputStream(input)
