@@ -34,4 +34,5 @@ KEY_VERSION=1
 ## Notes
 
 - The `local.properties` file should not be included in version control and is listed in `.gitignore`.
-- In this demo app, the boarding API call to Adyen is made in data/remote/BoardingRepository.kt, but should ideally be made from a server rather than directly from the app for best practice.
+- In this demo app, the boarding API call to Adyen is made in data/remote/BoardingRepository.kt, but should ideally be made from a server rather than directly from the app for best practice. 
+- This app communicates with the secondary Adyen Payments app by opening a deep link. Android uses "intents" to accomplish this. To "whitelist" the different deep links used by the app—both for opening the external app and for handling the return—intent filters needed to be added in the AndroidManifest.xml for all the different URLs being used.
