@@ -80,6 +80,8 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                     if (paymentResponse?.has("Response") == true) {
                         val responseObj = paymentResponse.getJSONObject("Response")
                         val result = responseObj.getString("Result")
+                        val errorCondition = responseObj.optString("ErrorCondition", null)
+                        val additionalResponse = responseObj.optString("AdditionalResponse", null)
 
                         val paymentResult = paymentResponse.optJSONObject("PaymentResult")
                         val amountsResp = paymentResult?.optJSONObject("AmountsResp")
@@ -87,6 +89,20 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                         val currency = amountsResp?.optString("Currency")
 
                         val toastMessage = StringBuilder("Result: $result")
+                        /*if (!errorCondition.isNullOrEmpty()) {
+                            toastMessage.append("\nError Condition: $errorCondition")
+                        }*/
+                        if (!additionalResponse.isNullOrEmpty()) {
+                            val additionalResponseMap = additionalResponse.split("&").associate {
+                                val (key, value) = it.split("=")
+                                key to value
+                            }
+                            val message = additionalResponseMap["message"]?.replace("%20", " ")
+                            if (!message.isNullOrEmpty()) {
+                                toastMessage.append("\nReason: $message")
+                            }
+                        }
+
                         if (authorizedAmount != null && currency != null) {
                             toastMessage.append("\nAuthorized Amount: $authorizedAmount\nCurrency: $currency")
                         }
