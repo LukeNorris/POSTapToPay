@@ -48,8 +48,22 @@ fun NumberInput(
             BasicTextField(
                 value = textFieldValue,
                 onValueChange = { newValue ->
-                    // Restrict input to valid decimal numbers with max 2 decimal places and max value of 1000
-                    val filteredValue = newValue.filter { it.isDigit() || it == '.' }
+                    // Step 1: Filter the input to allow only digits and a single decimal point
+                    var filteredValue = newValue.filter { it.isDigit() || it == '.' }
+
+                    // Step 2: Handle leading zeros
+                    if (filteredValue.startsWith("00")) {
+                        filteredValue = "0" + filteredValue.trimStart('0')
+                    } else if (filteredValue.startsWith("0") && filteredValue.length > 1 && filteredValue[1] != '.') {
+                        filteredValue = filteredValue.trimStart('0')
+                    }
+
+                    // Step 3: Ensure that decimal numbers have a leading zero
+                    if (filteredValue.startsWith(".")) {
+                        filteredValue = "0$filteredValue"
+                    }
+
+                    // Step 4: Validate the input for a single decimal point, max 2 decimal places, and value <= 1000
                     if (filteredValue.count { it == '.' } <= 1 &&
                         filteredValue.toDoubleOrNull()?.let { it <= 1000 } != false &&
                         (filteredValue.indexOf('.').let { it == -1 || filteredValue.length - it <= 3 })
@@ -66,8 +80,8 @@ fun NumberInput(
                 singleLine = true,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-
             )
+
             if (textFieldValue.isEmpty()) {
                 Text(
                     text = "0.00",

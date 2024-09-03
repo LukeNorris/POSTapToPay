@@ -45,7 +45,7 @@ class PaymentRepository(private val context: Context) {
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun handleDeepLinkResponse(response: String?): String {
+    /*suspend fun handleDeepLinkResponse(response: String?): String {
         return withContext(Dispatchers.Default) {
             try {
                 Log.d("PaymentRepository", "Starting handleDeepLinkResponse")
@@ -82,6 +82,62 @@ class PaymentRepository(private val context: Context) {
                 throw e
             }
         }
+    }*/
+    suspend fun handleDeepLinkResponse(response: String?): String {
+        return withContext(Dispatchers.Default) {
+            try {
+                Log.d("PaymentRepository", "Starting handleDeepLinkResponse")
+                val decodedResponse = String(Base64.getDecoder().decode(response), Charsets.UTF_8)
+                Log.d("PaymentRepository", "Decoded Response: $decodedResponse")
+
+                // Parse the decoded response into a JSON object
+                val decodedResponseJson = JSONObject(decodedResponse)
+
+                // Convert the decoded response JSON back to string
+                val modifiedDecodedResponse = decodedResponseJson.toString()
+
+                val decryptedNexoResponse = nexoCrypto.decrypt_and_validate_hmac(
+                    modifiedDecodedResponse.toByteArray(Charsets.UTF_8),
+                    BuildConfig.KEY_IDENTIFIER,
+                    BuildConfig.KEY_VERSION.toLong()
+                )
+                Log.d("PaymentRepository", "Decrypted Nexo Response: ${String(decryptedNexoResponse.packet, Charsets.UTF_8)}")
+
+                // Extract ByteArray from the decrypted response
+                val decryptedNexoResponseBytes = decryptedNexoResponse.packet
+
+                // Convert ByteArray to String
+                val decryptedNexoResponseString = String(decryptedNexoResponseBytes, Charsets.UTF_8)
+
+                // Parse the decrypted response into a JSON object
+                val decryptedResponseJson = JSONObject(decryptedNexoResponseString)
+
+                // Check and log specific fields if they exist
+                if (decryptedResponseJson.has("MessagePayload")) {
+                    Log.d("PaymentRepository", "MessagePayload: ${decryptedResponseJson.getString("MessagePayload")}")
+                } else {
+                    Log.d("PaymentRepository", "No MessagePayload found")
+                }
+
+                if (decryptedResponseJson.has("PaymentInstrumentData")) {
+                    Log.d("PaymentRepository", "PaymentInstrumentData: ${decryptedResponseJson.getString("PaymentInstrumentData")}")
+                } else {
+                    Log.d("PaymentRepository", "No PaymentInstrumentData found")
+                }
+
+                // Verifying if decryptedNexoResponseString is a valid JSON string
+                if (decryptedNexoResponseString.isEmpty()) {
+                    throw JSONException("Decrypted Nexo Response is null or empty")
+                }
+
+                decryptedNexoResponseString
+            } catch (e: Exception) {
+                Log.e("PaymentRepository", "Error in handleDeepLinkResponse", e)
+                throw e
+            }
+        }
     }
+
+
 
 }
