@@ -28,8 +28,8 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
     private val repository = BoardingRepository()
     private val installationIdRepository = InstallationIdRepository(application)
 
-    private val _boardingState = MutableStateFlow(BoardingViewModelState())
-    val boardingState: StateFlow<BoardingViewModelState> = _boardingState
+    private val _boardingState = MutableStateFlow(BoardingState())
+    val boardingState: StateFlow<BoardingState> = _boardingState
 
     fun checkBoardingStatus(activity: AppCompatActivity) {
         viewModelScope.launch {
@@ -74,7 +74,6 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                 } else {
                     Log.e("BoardingViewModel", "Received boarding status as true but no installation ID.")
                     _boardingState.value = _boardingState.value.copy(error = "Installation ID is missing despite boarded being true.")
-                    /*_error.value = "Installation ID is missing despite boarded being true."*/
                     ToastUtils.showToast(activity, "Installation ID is missing despite boarded being true.")
                 }
             }
@@ -85,14 +84,12 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                 } else {
                     Log.e("BoardingViewModel", "Boarding request token is null.")
                     _boardingState.value = _boardingState.value.copy(error = "Boarding request token is null.")
-                   /* _error.value = "Boarding request token is null."*/
                     ToastUtils.showToast(activity, "Boarding request token is null.")
                 }
             }
             else -> {
                 Log.e("BoardingViewModel", "Unhandled deep link response.")
                 _boardingState.value = _boardingState.value.copy(error = "Unhandled deep link response.")
-                /*_error.value = "Unhandled deep link response."*/
                 ToastUtils.showToast(activity, "Unhandled deep link response.")
             }
         }
@@ -114,8 +111,6 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                 isLoading = true,
                 error = null
             )
-           /* _isLoading.value = true
-            _error.value = null*/
 
             try {
                 Log.d("BoardingViewModel", "Sending network request to generate boarding token")
@@ -126,12 +121,10 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                 response?.let {
                     Log.d("BoardingViewModel", "Boarding token generated successfully: ${it.boardingToken}")
                     _boardingState.value = _boardingState.value.copy(apiResponse = it.boardingToken)
-                   /* _apiResponse.value = it.boardingToken*/
                     sendBoardingTokenToApp(it.boardingToken, activity)
                 } ?: run {
                     Log.e("BoardingViewModel", "Failed to generate boarding token.")
                     _boardingState.value = _boardingState.value.copy(error = "Failed to generate boarding token")
-                    /*_error.value = "Failed to generate boarding token"*/
                     ToastUtils.showToast(activity, "Failed to generate boarding token")
                 }
             } catch (e: Exception) {
@@ -140,12 +133,9 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                     error = e.localizedMessage,
                     apiResponse = null
                 )
-                /*_error.value = e.localizedMessage*/
-                /*_apiResponse.value = null*/
                 ToastUtils.showToast(activity, "Error generating boarding token: ${e.localizedMessage}")
             } finally {
                 _boardingState.value = _boardingState.value.copy(isLoading = false)
-               /* _isLoading.value = false*/
                 Log.d("BoardingViewModel", "Finished generating boarding token.")
             }
         }

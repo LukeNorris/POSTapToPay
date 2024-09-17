@@ -27,16 +27,8 @@ fun Home(
     activity: AppCompatActivity
 ) {
     POSTapToPayTheme {
-        /*val apiResponse by boardingViewModel.apiResponse.collectAsState(initial = null)
-        val isLoading by boardingViewModel.isLoading.collectAsState()
-        val error by boardingViewModel.error.collectAsState()*/
-
         val boardingState by boardingViewModel.boardingState.collectAsState()
 
-        /*val paymentIsLoading by paymentViewModel.paymentIsLoading.collectAsState()*/
-        /*val paymentError by paymentViewModel.paymentError.collectAsState()*/
-
-        /*val price by paymentViewModel.price.collectAsState()*/
         val paymentState by paymentViewModel.paymentState.collectAsState()
 
         if (boardingState.isLoading || paymentState.isLoading) {

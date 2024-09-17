@@ -47,7 +47,6 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                 installationIdRepository.getInstallationId()
             }
 
-            //Log.d("PaymentViewModel", "Current Installation ID: $installationId")
             if (installationId.isNullOrEmpty()) {
                 Log.d("PaymentViewModel", "Installation ID is empty. Cannot create nexo request without.")
             } else {
@@ -86,9 +85,6 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                         val currency = amountsResp?.optString("Currency")
 
                         val toastMessage = StringBuilder("Result: $result")
-                        /*if (!errorCondition.isNullOrEmpty()) {
-                            toastMessage.append("\nError Condition: $errorCondition")
-                        }*/
                         if (!additionalResponse.isNullOrEmpty()) {
                             val additionalResponseMap = additionalResponse.split("&").associate {
                                 val (key, value) = it.split("=")
