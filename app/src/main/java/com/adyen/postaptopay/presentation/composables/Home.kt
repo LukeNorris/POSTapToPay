@@ -27,16 +27,19 @@ fun Home(
     activity: AppCompatActivity
 ) {
     POSTapToPayTheme {
-        val apiResponse by boardingViewModel.apiResponse.collectAsState(initial = null)
+        /*val apiResponse by boardingViewModel.apiResponse.collectAsState(initial = null)
         val isLoading by boardingViewModel.isLoading.collectAsState()
-        val error by boardingViewModel.error.collectAsState()
+        val error by boardingViewModel.error.collectAsState()*/
 
-        val paymentIsLoading by paymentViewModel.paymentIsLoading.collectAsState()
-        val paymentError by paymentViewModel.paymentError.collectAsState()
+        val boardingState by boardingViewModel.boardingState.collectAsState()
 
-        val price by paymentViewModel.price.collectAsState()
+        /*val paymentIsLoading by paymentViewModel.paymentIsLoading.collectAsState()*/
+        /*val paymentError by paymentViewModel.paymentError.collectAsState()*/
 
-        if (isLoading || paymentIsLoading) {
+        /*val price by paymentViewModel.price.collectAsState()*/
+        val paymentState by paymentViewModel.paymentState.collectAsState()
+
+        if (boardingState.isLoading || paymentState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp))
         } else {
             Column(
@@ -52,7 +55,7 @@ fun Home(
                     color = Color.Gray,
                 )
                 NumberInput(
-                    value = price,
+                    value = paymentState.price,
                     onValueChange = { paymentViewModel.updatePrice(it) },
                     modifier = Modifier.width(260.dp)
                 )
@@ -64,9 +67,9 @@ fun Home(
                     Button(
                         onClick = {
                             Log.d("Pay", "Pay button clicked")
-                            val priceValue = price.toDoubleOrNull()
+                            val priceValue = paymentState.price.toDoubleOrNull()
                             if (priceValue != null) {
-                                paymentViewModel.makePayment(activity, price, "Normal")
+                                paymentViewModel.makePayment(activity, paymentState.price, "Normal")
                             } else {
                                 ToastUtils.showToast(activity, "Please enter a valid price", 5000)
                             }
@@ -85,9 +88,9 @@ fun Home(
                     Button(
                         onClick = {
                             Log.d("Refund", "Refund button clicked")
-                            val priceValue = price.toDoubleOrNull()
+                            val priceValue = paymentState.price.toDoubleOrNull()
                             if (priceValue != null) {
-                                paymentViewModel.makePayment(activity, price, "Refund")
+                                paymentViewModel.makePayment(activity, paymentState.price, "Refund")
                             } else {
                                 ToastUtils.showToast(activity, "Please enter a valid price", 5000)
                             }
@@ -113,13 +116,13 @@ fun Home(
                     ) {
                         Text("Boarding check", color = MaterialTheme.colorScheme.onPrimary)
                     }
-                    error?.let {
+                    boardingState.error?.let {
                         Text("Error: $it", color = Color.Red)
                         ToastUtils.showToast(activity, "Error: $it", 5000)
-                    } ?: paymentError?.let {
+                    } ?: paymentState.error?.let {
                         Text("Error: $it", color = Color.Red)
                         ToastUtils.showToast(activity, "Payment Error: $it", 5000)
-                    } ?: apiResponse?.let {
+                    } ?: boardingState.apiResponse?.let {
                         Text("Boarding successful.")
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Filter logcat for BoardingRepository to see installationId and boardingToken from Adyen")

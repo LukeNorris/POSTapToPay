@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.adyen.postaptopay.data.local.InstallationIdRepository
@@ -26,17 +27,13 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
 
     private val repository = PaymentRepository(application)
 
-    private val _isLoading = MutableStateFlow(false)
-    val paymentIsLoading: StateFlow<Boolean> = _isLoading
-
-    private val _error = MutableStateFlow<String?>(null)
-    val paymentError: StateFlow<String?> = _error
-
-    private val _price = MutableStateFlow("")
-    val price: StateFlow<String> = _price
+    private val _paymentState = MutableStateFlow(PaymentState())
+    val paymentState: StateFlow<PaymentState> = _paymentState
 
     fun updatePrice(newPrice: String) {
-        _price.value = newPrice
+        _paymentState.value = _paymentState.value.copy(
+            price = newPrice
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -116,7 +113,10 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
         } ?: run {
-            _error.value = "Response is null"
+            _paymentState.value = _paymentState.value.copy(
+                error = error?:"There was an error",
+                isLoading = false
+            )
         }
     }
 
@@ -175,5 +175,4 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
     """.trimMargin("|")
     }
 }
-
 

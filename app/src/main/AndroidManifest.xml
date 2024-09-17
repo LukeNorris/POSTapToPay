@@ -30,12 +30,13 @@
             </intent-filter>
 
             <!-- Intent filter to handle deep links -->
+            <!-- live -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="adyenpayments"
+                    android:scheme="${schemeName}"
                     android:host="boarded" />
             </intent-filter>
 
@@ -58,19 +59,23 @@
                     android:host="com.merchant.companion"
                     android:path="/payment" />
             </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="adyenpayments"
+                    android:scheme="${schemeName}"
                     android:host="board" />
             </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="adyenpayments" android:host="nexo" />
+                <data
+                    android:scheme="${schemeName}"
+                    android:host="nexo" />
             </intent-filter>
         </activity>
     </application>

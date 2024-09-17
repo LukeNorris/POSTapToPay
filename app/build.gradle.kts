@@ -6,6 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0" // Ensure the version matches your Kotlin version
 }
 
+
+
 android {
     namespace = "com.adyen.postaptopay"
     compileSdk = 34
@@ -19,6 +21,16 @@ android {
         }
     }
 
+    // Read the 'env' variable from local.properties
+    val env = localProperties.getProperty("ENV", "live")
+
+    // Set the schemeName based on the environment
+    val schemeName = when (env) {
+        "test" -> "adyenpayments-test"
+        "dev" -> "adyenpayments-dev"
+        else -> "adyenpayments"
+    }
+
     defaultConfig {
         applicationId = "com.adyen.postaptopay"
         minSdk = 24
@@ -30,11 +42,18 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Add the manifest placeholder
+        manifestPlaceholders["schemeName"] = schemeName
+
         buildConfigField("String", "ADYEN_API_KEY", "\"${localProperties["ADYEN_API_KEY"]}\"")
         buildConfigField("String", "ADYEN_MERCHANT_ACCOUNT", "\"${localProperties["ADYEN_MERCHANT_ACCOUNT"]}\"")
         buildConfigField("String", "PASSPHRASE", "\"${localProperties["PASSPHRASE"]}\"")
         buildConfigField("String", "KEY_IDENTIFIER", "\"${localProperties["KEY_IDENTIFIER"]}\"")
         buildConfigField("String", "KEY_VERSION", "\"${localProperties["KEY_VERSION"]}\"")
+
+        // Add the scheme name to BuildConfig
+        buildConfigField("String", "SCHEME_NAME", "\"$schemeName\"")
     }
 
     buildTypes {

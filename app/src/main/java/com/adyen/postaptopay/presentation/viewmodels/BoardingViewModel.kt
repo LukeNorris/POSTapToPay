@@ -9,6 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.adyen.postaptopay.BuildConfig
 import com.adyen.postaptopay.data.local.InstallationIdRepository
 import com.adyen.postaptopay.data.remote.BoardingRepository
 import com.adyen.postaptopay.data.remote.BoardingResponse
@@ -27,14 +28,8 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
     private val repository = BoardingRepository()
     private val installationIdRepository = InstallationIdRepository(application)
 
-    private val _apiResponse = MutableStateFlow<String?>(null)
-    val apiResponse: StateFlow<String?> = _apiResponse
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _boardingState = MutableStateFlow(BoardingViewModelState())
+    val boardingState: StateFlow<BoardingViewModelState> = _boardingState
 
     fun checkBoardingStatus(activity: AppCompatActivity) {
         viewModelScope.launch {
@@ -55,7 +50,8 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
     private fun initiateBoarding(activity: AppCompatActivity) {
         val returnUrl = "merchantscheme://com.merchant.companion/onboarding"
         val encodedParams = DeepLinkUtils.encodeUriParameters(mapOf("returnUrl" to returnUrl))
-        val uri = Uri.parse("adyenpayments://boarded?$encodedParams")
+        val scheme = BuildConfig.SCHEME_NAME
+        val uri = Uri.parse("$scheme://boarded?$encodedParams")
         DeepLinkUtils.openDeepLink(activity, uri)
     }
 
@@ -77,7 +73,8 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                     ToastUtils.showToast(activity, "App is already boarded. Installation ID: $installationId")
                 } else {
                     Log.e("BoardingViewModel", "Received boarding status as true but no installation ID.")
-                    _error.value = "Installation ID is missing despite boarded being true."
+                    _boardingState.value = _boardingState.value.copy(error = "Installation ID is missing despite boarded being true.")
+                    /*_error.value = "Installation ID is missing despite boarded being true."*/
                     ToastUtils.showToast(activity, "Installation ID is missing despite boarded being true.")
                 }
             }
@@ -87,13 +84,15 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                     Log.d("BoardingViewModel", "generateBoardingToken called")
                 } else {
                     Log.e("BoardingViewModel", "Boarding request token is null.")
-                    _error.value = "Boarding request token is null."
+                    _boardingState.value = _boardingState.value.copy(error = "Boarding request token is null.")
+                   /* _error.value = "Boarding request token is null."*/
                     ToastUtils.showToast(activity, "Boarding request token is null.")
                 }
             }
             else -> {
                 Log.e("BoardingViewModel", "Unhandled deep link response.")
-                _error.value = "Unhandled deep link response."
+                _boardingState.value = _boardingState.value.copy(error = "Unhandled deep link response.")
+                /*_error.value = "Unhandled deep link response."*/
                 ToastUtils.showToast(activity, "Unhandled deep link response.")
             }
         }
@@ -111,8 +110,12 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
     fun generateBoardingToken(boardingRequestToken: String, activity: AppCompatActivity) {
         viewModelScope.launch {
             Log.d("BoardingViewModel", "Starting to generate boarding token.")
-            _isLoading.value = true
-            _error.value = null
+            _boardingState.value = _boardingState.value.copy(
+                isLoading = true,
+                error = null
+            )
+           /* _isLoading.value = true
+            _error.value = null*/
 
             try {
                 Log.d("BoardingViewModel", "Sending network request to generate boarding token")
@@ -122,20 +125,27 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
                 Log.d("BoardingViewModel", "Network request completed with response: $response")
                 response?.let {
                     Log.d("BoardingViewModel", "Boarding token generated successfully: ${it.boardingToken}")
-                    _apiResponse.value = it.boardingToken
+                    _boardingState.value = _boardingState.value.copy(apiResponse = it.boardingToken)
+                   /* _apiResponse.value = it.boardingToken*/
                     sendBoardingTokenToApp(it.boardingToken, activity)
                 } ?: run {
                     Log.e("BoardingViewModel", "Failed to generate boarding token.")
-                    _error.value = "Failed to generate boarding token"
+                    _boardingState.value = _boardingState.value.copy(error = "Failed to generate boarding token")
+                    /*_error.value = "Failed to generate boarding token"*/
                     ToastUtils.showToast(activity, "Failed to generate boarding token")
                 }
             } catch (e: Exception) {
                 Log.e("BoardingViewModel", "Error generating boarding token", e)
-                _error.value = e.localizedMessage
-                _apiResponse.value = null
+                _boardingState.value = _boardingState.value.copy(
+                    error = e.localizedMessage,
+                    apiResponse = null
+                )
+                /*_error.value = e.localizedMessage*/
+                /*_apiResponse.value = null*/
                 ToastUtils.showToast(activity, "Error generating boarding token: ${e.localizedMessage}")
             } finally {
-                _isLoading.value = false
+                _boardingState.value = _boardingState.value.copy(isLoading = false)
+               /* _isLoading.value = false*/
                 Log.d("BoardingViewModel", "Finished generating boarding token.")
             }
         }
@@ -147,8 +157,9 @@ class BoardingViewModel(application: Application) : AndroidViewModel(application
         val returnUrl = "merchantscheme://com.merchant.companion/onboarding"
         val returnUrlEncoded = URLEncoder.encode(returnUrl, Charsets.UTF_8.name())
         val boardingTokenBase64 = Base64.getEncoder().encodeToString(boardingToken.toByteArray())
+        val scheme = BuildConfig.SCHEME_NAME
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("adyenpayments://board?boardingToken=$boardingTokenBase64&returnUrl=$returnUrlEncoded")
+            data = Uri.parse("$scheme://board?boardingToken=$boardingTokenBase64&returnUrl=$returnUrlEncoded")
         }
         DeepLinkUtils.openDeepLink(activity, intent.data!!)
     }
