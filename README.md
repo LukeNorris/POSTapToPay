@@ -19,7 +19,7 @@ This is a demo POS app for Adyen's TapToPay Android solution. It integrates with
 To run this project, you need to add your Adyen credentials to the `local.properties` file.
 
 1. Open the `local.properties` file (located in the root directory of the project).
-2. To specify which Adyen Payments environment your app should use—live, test, or dev—set the ENV variable in your local.properties file accordingly. For example: ENV=live   # Use the live environment, or env=test   # Use the test environment
+2. Set the ENV variable in your local.properties file to "live," "test," or "dev" to specify the Adyen Payments app your are using.
 3. Add your credentials as shown here:
 
 ADYEN_API_KEY=your_api_key_here
