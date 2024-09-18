@@ -23,7 +23,6 @@ android {
 
     // Read the 'env' variable from local.properties
     val env = localProperties.getProperty("ENV", "live")
-
     // Set the schemeName based on the environment
     val schemeName = when (env) {
         "test" -> "adyenpayments-test"
@@ -51,9 +50,8 @@ android {
         buildConfigField("String", "PASSPHRASE", "\"${localProperties["PASSPHRASE"]}\"")
         buildConfigField("String", "KEY_IDENTIFIER", "\"${localProperties["KEY_IDENTIFIER"]}\"")
         buildConfigField("String", "KEY_VERSION", "\"${localProperties["KEY_VERSION"]}\"")
-
-        // Add the scheme name to BuildConfig
         buildConfigField("String", "SCHEME_NAME", "\"$schemeName\"")
+        buildConfigField("String", "APP_LABEL", "\"POS TapToPay - $env\"")
     }
 
     buildTypes {
