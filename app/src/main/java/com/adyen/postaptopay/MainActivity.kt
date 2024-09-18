@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
+        supportActionBar?.hide()
         title = BuildConfig.APP_LABEL
         setContent {
             POSTapToPayTheme {

@@ -26,7 +26,7 @@ fun NumberInput(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var textFieldValue by remember { mutableStateOf(value) }
+    var textFieldValue by remember { mutableStateOf(value)}
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -37,6 +37,7 @@ fun NumberInput(
         Text(
             text = "€",
             fontSize = 40.sp,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(end = 4.dp)
         )
         Box(
@@ -76,7 +77,11 @@ fun NumberInput(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done
                 ),
-                textStyle = LocalTextStyle.current.copy(fontSize = 60.sp, textAlign = TextAlign.Start),
+                textStyle = LocalTextStyle.current.copy(
+                    fontSize = 60.sp,
+                    textAlign = TextAlign.Start,
+                    color = MaterialTheme.colorScheme.onBackground // Use theme color
+                ),
                 singleLine = true,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -86,10 +91,11 @@ fun NumberInput(
                 Text(
                     text = "0.00",
                     fontSize = 60.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), // Use theme color with transparency
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
         }
     }
 }
+
