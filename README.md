@@ -4,6 +4,7 @@
 This is a demo POS app for Adyen's TapToPay Android solution. It integrates with the Adyen Payments App using a deeplink for payments. Ensure both this POS Demo app and the Adyen Payments App APK are installed on your device.
 
 <img src="images/ttp-dark-theme.png" alt="App Screenshot" width="300" style="padding-right: 100px;"/> <img src="images/ttp-light-theme.png" alt="App Screenshot" width="300"/>
+
 ## How to Run
 
 1. Clone the repository.
@@ -38,3 +39,4 @@ ENV=test
 - The `local.properties` file should not be included in version control and is listed in `.gitignore`.
 - In this demo app, the boarding API call to Adyen is made in data/remote/BoardingRepository.kt, but should ideally be made from a server rather than directly from the app for best practice. 
 - This app communicates with the secondary Adyen Payments app by opening a deep link. Android uses "intents" to accomplish this. To "whitelist" the different deep links used by the app—both for opening the external app and for handling the return—I have added intent filters in the AndroidManifest.xml for all the different URLs being used.
+  The "Boarding check" button visually demonstrates the one-time boarding process. In a real scenario this would run in the background without user interaction.
