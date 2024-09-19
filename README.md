@@ -3,7 +3,9 @@
 
 This is a demo POS app for Adyen's TapToPay Android solution. It integrates with the Adyen Payments App using a deeplink for payments. Ensure both this POS Demo app and the Adyen Payments App APK are installed on your device.
 
-![App Screenshot](images/ttp-dark-theme.png) ![App Screenshot](images/ttp-light-theme.png)
+![App Screenshot](images/ttp-dark-theme.png) ![App Screenshot](images/ttp-light-theme.png
+<img src="images/ttp-dark-theme.png" alt="App Screenshot" width="300"/> <img src="images/ttp-light-theme.png" alt="App Screenshot" width="300"/>
+
 ## How to Run
 
 1. Clone the repository.
