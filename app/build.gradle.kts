@@ -27,6 +27,7 @@ android {
     val schemeName = when (env) {
         "test" -> "adyenpayments-test"
         "dev" -> "adyenpayments-dev"
+        "beta" -> "adyenpayments-dev"
         else -> "adyenpayments"
     }
 
@@ -52,6 +53,7 @@ android {
         buildConfigField("String", "KEY_VERSION", "\"${localProperties["KEY_VERSION"]}\"")
         buildConfigField("String", "SCHEME_NAME", "\"$schemeName\"")
         buildConfigField("String", "APP_LABEL", "\"POS TapToPay - $env\"")
+        buildConfigField("String", "ENV", "\"$env\"")
     }
 
     buildTypes {
