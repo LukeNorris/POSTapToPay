@@ -8,27 +8,39 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.adyen.postaptopay.presentation.composables.TransactionsScreen
 import com.adyen.postaptopay.presentation.composables.Home
 import com.adyen.postaptopay.presentation.viewmodels.BoardingViewModel
 import com.adyen.postaptopay.presentation.viewmodels.PaymentViewModel
+import com.adyen.postaptopay.presentation.viewmodels.ReferencedRefundViewModel
 import com.adyen.postaptopay.ui.theme.POSTapToPayTheme
 import com.adyen.postaptopay.util.DeepLinkUtils
 import com.adyen.postaptopay.util.ToastUtils
 
 class MainActivity : AppCompatActivity() {
-
     private val boardingViewModel: BoardingViewModel by viewModels()
     private val paymentViewModel: PaymentViewModel by viewModels()
+    private val referencedRefundViewModel: ReferencedRefundViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleIntent(intent)
+
         supportActionBar?.hide()
         title = BuildConfig.APP_LABEL
+
         setContent {
             POSTapToPayTheme {
-                Home(boardingViewModel, paymentViewModel, this)
+                AppNavHost(
+                    boardingViewModel,
+                    paymentViewModel,
+                    activity = this
+                )
             }
         }
     }
@@ -46,8 +58,12 @@ class MainActivity : AppCompatActivity() {
 
         queryParams?.let {
             when {
-                it.containsKey("boarded") -> boardingViewModel.handleDeepLinkResponse(it, this)  // Pass 'this' as the activity
-                it.containsKey("response") -> paymentViewModel.handleDeepLinkResponse(it)
+                it.containsKey("boarded")  ->
+                    boardingViewModel.handleDeepLinkResponse(it, this)
+                it.containsKey("response") -> {
+                    paymentViewModel.handleDeepLinkResponse(it)
+                    referencedRefundViewModel.handleDeepLinkResponse(it)
+                }
                 else -> {
                     Log.d("DeepLinkResponse", "Unknown deep link host or missing query parameters.")
                     ToastUtils.showToast(
@@ -63,5 +79,26 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun AppNavHost(
+    boardingViewModel: BoardingViewModel,
+    paymentViewModel: PaymentViewModel,
+    activity: AppCompatActivity
+) {
+    val navController = rememberNavController()
 
-
+    NavHost(navController, startDestination = "home") {
+        composable("home") {
+            Home(
+                boardingViewModel  = boardingViewModel,
+                paymentViewModel   = paymentViewModel,
+                navController      = navController,
+                activity           = activity
+            )
+        }
+        composable("transactions") {
+            TransactionsScreen(navController)
+        }
+    }
+}

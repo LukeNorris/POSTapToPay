@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.adyen.postaptopay.data.local.InstallationIdRepository
 import com.adyen.postaptopay.data.remote.PaymentRepository
+import com.adyen.postaptopay.data.local.TransactionRepository
 import com.adyen.postaptopay.util.ToastUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,10 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
     private val installationIdRepository = InstallationIdRepository(application)
 
     private val repository = PaymentRepository(application)
+    private val transactionRepo = TransactionRepository(application)
+
+    // remember which tx we just sent (so we can mark it refunded later)
+    private var lastTxId: String? = null
 
     private val _paymentState = MutableStateFlow(PaymentState())
     val paymentState: StateFlow<PaymentState> = _paymentState
@@ -41,7 +46,6 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun makePayment(activity: AppCompatActivity, requestedAmount: String, paymentType: String) {
-
         viewModelScope.launch {
             val installationId = withContext(Dispatchers.IO) {
                 installationIdRepository.getInstallationId()
@@ -51,12 +55,25 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
                 Log.d("PaymentViewModel", "Installation ID is empty. Cannot create nexo request without.")
             } else {
                 Log.d("PaymentViewModel", "Making a payment initiated.")
-                val nexoRequest = generateNexoRequest("My cash register", installationId, "EUR", requestedAmount, paymentType)
+
+                // generate and stash the transaction ID
+                val transactionID = UUID.randomUUID().toString()
+                lastTxId = transactionID
+
+                val nexoRequest = generateNexoRequest(
+                    saleId          = "My cash register",
+                    poiId           = installationId,
+                    currency        = "EUR",
+                    requestedAmount = requestedAmount,
+                    paymentType     = paymentType,
+                    transactionID   = transactionID
+                )
                 Log.d("PaymentViewModel", "Generated nexo request: $nexoRequest")
                 repository.createPaymentLink(nexoRequest, activity)
             }
         }
     }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun handleDeepLinkResponse(queryParams: Map<String, String>) {
@@ -68,6 +85,17 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
             viewModelScope.launch {
                 try {
                     val decryptedNexoResponseString = repository.handleDeepLinkResponse(it)
+                    Log.d("PaymentViewModel", "repository.handleDeepLinkResponse() returned")
+
+                    // ── reversal? ──────────────────────────────────────────────
+                    val reversalResult = repository.getLastReversalResult()
+                    if (reversalResult != null) {
+
+                        return@launch    // skip normal-payment parsing
+                    }
+                    // ───────────────────────────────────────────────────────────
+
+
                     val decryptedNexoJson = JSONObject(decryptedNexoResponseString)
                     val saleToPOIResponse = decryptedNexoJson.getJSONObject("SaleToPOIResponse")
                     val paymentResponse = saleToPOIResponse.optJSONObject("PaymentResponse")
@@ -126,13 +154,51 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
         poiId: String,
         currency: String,
         requestedAmount: String,
-        paymentType: String
+        paymentType: String,
+        transactionID: String
     ): String {
         val timeStamp = ZonedDateTime.now().format(DATE_FORMAT)
         val maxServiceIdSize = 10
         val serviceId: String = UUID.randomUUID().toString()
         val transactionID: String = "Luke-Adyen-TTP-Test"
 
+      /*  return """
+        |{
+        |  "SaleToPOIRequest": {
+        |    "MessageHeader": {
+        |      "ProtocolVersion": "3.0",
+        |      "MessageClass": "Service",
+        |      "MessageCategory": "Payment",
+        |      "MessageType": "Request",
+        |      "ServiceID": "${serviceId.take(maxServiceIdSize)}",
+        |      "SaleID": "$saleId",
+        |      "POIID": "$poiId",
+        |      "Timestamp": "$timeStamp",
+        |      "SaleTransactionID": "$transactionID"
+        |    },
+        |    "PaymentRequest": {
+        |      "SaleData": {
+        |        "SaleToAcquirerData":"ewogICAgImFkZGl0aW9uYWxEYXRhIjogewogICAgICAgICJzcGxpdC5hcGkiOiAiMSIsCiAgICAgICAgInNwbGl0Lm5yT2ZJdGVtcyI6ICIzIiwKICAgICAgICAic3BsaXQudG90YWxBbW91bnQiOiAiMTAwIiwKICAgICAgICAic3BsaXQuY3VycmVuY3lDb2RlIjogIkVVUiIsCiAgICAgICAgInNwbGl0Lml0ZW0xLmFtb3VudCI6ICI1MCIsCiAgICAgICAgInNwbGl0Lml0ZW0xLnR5cGUiOiAiQmFsYW5jZUFjY291bnQiLAogICAgICAgICJzcGxpdC5pdGVtMS5hY2NvdW50IjogIkJBMzI5NU0yMjMyMjkyNU1EU0tKQjRCS1QiLAogICAgICAgICJzcGxpdC5pdGVtMS5yZWZlcmVuY2UiOiAicmVmZXJlbmNlX3NwbGl0XzEiLAogICAgICAgICJzcGxpdC5pdGVtMS5kZXNjcmlwdGlvbiI6ICJkZXNjcmlwdGlvbl9zcGxpdF8xIiwKICAgICAgICAic3BsaXQuaXRlbTIuYW1vdW50IjogIjUwIiwKICAgICAgICAic3BsaXQuaXRlbTIudHlwZSI6ICJDb21taXNzaW9uIiwKICAgICAgICAic3BsaXQuaXRlbTIucmVmZXJlbmNlIjogInJlZmVyZW5jZV9jb21taXNzaW9uIiwKICAgICAgICAic3BsaXQuaXRlbTIuZGVzY3JpcHRpb24iOiAiZGVzY3JpcHRpb25fY29tbWlzc2lvbiIsCiAgICAgICAgInNwbGl0Lml0ZW0zLnR5cGUiOiAiUGF5bWVudEZlZSIsCiAgICAgICAgInNwbGl0Lml0ZW0zLnJlZmVyZW5jZSI6ICJyZWZlcmVuY2VfUGF5bWVudEZlZSIsCiAgICAgICAgInNwbGl0Lml0ZW0zLmRlc2NyaXB0aW9uIjogImRlc2NyaXB0aW9uX1BheW1lbnRGZWVfdG9fbGlhYmxlIiwKICAgICAgICAibWVyY2hhbnRBY2NvdW50OiI6ICJMdWtlc0JhbGFuY2VQbGF0Zm9ybSIKICAgIH0KfQ==",
+        |        "SaleTransactionID": {
+        |          "TransactionID": "$transactionID",
+        |          "TimeStamp": "$timeStamp"
+        |        },
+        |        "SaleReferenceID": "testSaleReferenceID",
+        |        "RequestedValidity": "60"
+        |      },
+        |      "PaymentTransaction": {
+        |        "AmountsReq": {
+        |          "Currency": "$currency",
+        |          "RequestedAmount":$requestedAmount
+        |        }
+        |      },
+        |      "PaymentData":{
+        |           "PaymentType":"$paymentType"
+        |       }
+        |    }
+        |  }
+        |}
+    """.trimMargin("|")*/
         return """       
         |{
         |  "SaleToPOIRequest": {

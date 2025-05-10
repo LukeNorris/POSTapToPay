@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.adyen.postaptopay.BuildConfig
+import com.adyen.postaptopay.data.local.TransactionRepository
 import com.adyen.postaptopay.util.DeepLinkUtils
 import com.adyen.postaptopay.util.NexoCrypto
 import kotlinx.coroutines.Dispatchers
@@ -17,9 +18,14 @@ import java.net.URLEncoder
 import java.util.Base64
 import org.json.JSONException
 
+/**
+ * Repository handling Nexo payment deep-link requests and responses.
+ * Now also extracts POITransactionID and persists the last 5 transactions.
+ */
 class PaymentRepository(private val context: Context) {
 
     private val nexoCrypto = NexoCrypto(BuildConfig.PASSPHRASE.toCharArray())
+    private val transactionRepo = TransactionRepository(context)
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun createPaymentLink(nexoRequest: String, activity: AppCompatActivity) {
@@ -35,7 +41,6 @@ class PaymentRepository(private val context: Context) {
         val nexoRequestBase64 = Base64.getEncoder().encodeToString(encryptedNexoRequest)
         Log.d("PaymentRepository", "Encoded nexo request: $nexoRequestBase64")
 
-
         val scheme = BuildConfig.SCHEME_NAME
         val uriString = "$scheme://nexo?request=$nexoRequestBase64&returnUrl=$returnUrlEncoded"
         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -44,65 +49,103 @@ class PaymentRepository(private val context: Context) {
         DeepLinkUtils.openDeepLink(activity, intent.data!!)
     }
 
+    /**
+     * Decrypts the response, parses out POITransactionID and payment details,
+     * and saves the transaction to SharedPreferences (last 5 max).
+     * Returns the raw decrypted Nexo response JSON string.
+     */
+    // ← new: holds the last‐seen reversal Result (e.g. "Success"/"Failure"), or null otherwise
+    private var lastReversalResult: String? = null
 
-
-
+    /** ← new: call this from your VM after handleDeepLinkResponse(...) */
+    fun getLastReversalResult(): String? = lastReversalResult
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun handleDeepLinkResponse(response: String?): String {
         return withContext(Dispatchers.Default) {
             try {
                 Log.d("PaymentRepository", "Starting handleDeepLinkResponse")
+                // Base64-decode the URL param
                 val decodedResponse = String(Base64.getDecoder().decode(response), Charsets.UTF_8)
                 Log.d("PaymentRepository", "Decoded Response: $decodedResponse")
 
-                // Parse the decoded response into a JSON object
-                val decodedResponseJson = JSONObject(decodedResponse)
+                // Parse and re-stringify to ensure valid JSON
+                val decodedJson = JSONObject(decodedResponse)
+                val readyForDecrypt = decodedJson.toString()
 
-                // Convert the decoded response JSON back to string
-                val modifiedDecodedResponse = decodedResponseJson.toString()
-
-                val decryptedNexoResponse = nexoCrypto.decrypt_and_validate_hmac(
-                    modifiedDecodedResponse.toByteArray(Charsets.UTF_8),
+                // Decrypt + validate HMAC
+                val decrypted = nexoCrypto.decrypt_and_validate_hmac(
+                    readyForDecrypt.toByteArray(Charsets.UTF_8),
                     BuildConfig.KEY_IDENTIFIER,
                     BuildConfig.KEY_VERSION.toLong()
                 )
-                Log.d("PaymentRepository", "Decrypted Nexo Response: ${String(decryptedNexoResponse.packet, Charsets.UTF_8)}")
+                val decryptedJsonString = String(decrypted.packet, Charsets.UTF_8)
+                Log.d("PaymentRepository", "Decrypted Nexo Response: $decryptedJsonString")
 
-                // Extract ByteArray from the decrypted response
-                val decryptedNexoResponseBytes = decryptedNexoResponse.packet
+                // Parse decrypted JSON
+                val decryptedResponseJson = JSONObject(decryptedJsonString)
 
-                // Convert ByteArray to String
-                val decryptedNexoResponseString = String(decryptedNexoResponseBytes, Charsets.UTF_8)
+                // Extract SaleToPOIResponse → PaymentResponse
+                val saleToPOI = decryptedResponseJson.optJSONObject("SaleToPOIResponse")
 
-                // Parse the decrypted response into a JSON object
-                val decryptedResponseJson = JSONObject(decryptedNexoResponseString)
-
-                // Check and log specific fields if they exist
-                if (decryptedResponseJson.has("MessagePayload")) {
-                    Log.d("PaymentRepository", "MessagePayload: ${decryptedResponseJson.getString("MessagePayload")}")
+                //look for reversal first
+                val reversal  = saleToPOI?.optJSONObject("ReversalResponse")
+                if (reversal != null) {
+                    val responseObj = reversal.optJSONObject("Response")
+                    val result      = responseObj?.optString("Result")
+                    lastReversalResult = result
+                    Log.d("PaymentRepository", "ReversalResult = $result")
+                    // short-circuit: return the raw JSON as before
+                    return@withContext decryptedJsonString
                 } else {
-                    Log.d("PaymentRepository", "No MessagePayload found")
+                    // not a reversal, clear any stale value
+                    lastReversalResult = null
                 }
 
-                if (decryptedResponseJson.has("PaymentInstrumentData")) {
-                    Log.d("PaymentRepository", "PaymentInstrumentData: ${decryptedResponseJson.getString("PaymentInstrumentData")}")
+
+                val paymentResponse = saleToPOI?.optJSONObject("PaymentResponse")
+
+                // Extract POITransactionID (TransactionID + TimeStamp)
+                val poiData = paymentResponse?.optJSONObject("POIData")
+                val poiObj  = poiData?.optJSONObject("POITransactionID")
+                val txId    = poiObj?.optString("TransactionID")
+                val ts      = poiObj?.optString("TimeStamp")
+
+                // Extract authorized amount & currency
+                val paymentResult = paymentResponse?.optJSONObject("PaymentResult")
+                val amountsResp   = paymentResult?.optJSONObject("AmountsResp")
+                val authorizedAmt = amountsResp?.optDouble("AuthorizedAmount")
+                val currency      = amountsResp?.optString("Currency")
+
+                // Persist if valid
+                if (!txId.isNullOrEmpty() && !ts.isNullOrEmpty()) {
+                    transactionRepo.addTransaction(
+                        TransactionRepository.Transaction(
+                            id        = txId,
+                            timestamp = ts,
+                            amount    = authorizedAmt,
+                            currency  = currency
+                        )
+                    )
+                    Log.d("PaymentRepository", "Saved transaction $txId at $ts")
                 } else {
-                    Log.d("PaymentRepository", "No PaymentInstrumentData found")
+                    Log.d("PaymentRepository", "No POITransactionID found to save.")
                 }
 
-                // Verifying if decryptedNexoResponseString is a valid JSON string
-                if (decryptedNexoResponseString.isEmpty()) {
-                    throw JSONException("Decrypted Nexo Response is null or empty")
+                // Optional: Log other fields
+                decryptedResponseJson.optString("MessagePayload")?.takeIf { it.isNotEmpty() }?.let {
+                    Log.d("PaymentRepository", "MessagePayload: $it")
+                }
+                decryptedResponseJson.optString("PaymentInstrumentData")?.takeIf { it.isNotEmpty() }?.let {
+                    Log.d("PaymentRepository", "PaymentInstrumentData: $it")
                 }
 
-                decryptedNexoResponseString
+                // Return the raw decrypted JSON
+                decryptedJsonString
+
             } catch (e: Exception) {
                 Log.e("PaymentRepository", "Error in handleDeepLinkResponse", e)
                 throw e
             }
         }
     }
-
-
-
 }

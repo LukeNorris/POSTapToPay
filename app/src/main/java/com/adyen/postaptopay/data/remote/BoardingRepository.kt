@@ -20,6 +20,7 @@ class BoardingRepository {
 
     fun generateBoardingToken(boardingRequestToken: String): BoardingResponse? {
         val url = "https://management-${BuildConfig.ENV}.adyen.com/v1/merchants/${BuildConfig.ADYEN_MERCHANT_ACCOUNT}/generatePaymentsAppBoardingToken"
+        //val url = "https://management-${BuildConfig.ENV}.adyen.com/v1/merchants/${BuildConfig.ADYEN_MERCHANT_ACCOUNT}/stores/${BuildConfig.STORE}/generatePaymentsAppBoardingToken"
         val jsonBody = JSONObject().put("boardingRequestToken", boardingRequestToken).toString()
         val body = jsonBody.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
