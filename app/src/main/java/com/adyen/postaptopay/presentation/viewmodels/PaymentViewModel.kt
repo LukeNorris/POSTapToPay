@@ -227,7 +227,7 @@ class PaymentViewModel(application: Application) : AndroidViewModel(application)
         |          "Currency": "$currency",
         |          "RequestedAmount":$requestedAmount
         |        }
-        |      },
+        |      }, 
         |      "PaymentData":{
         |           "PaymentType":"$paymentType"
         |       }

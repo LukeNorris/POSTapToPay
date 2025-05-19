@@ -55,6 +55,7 @@ android {
         buildConfigField("String", "SCHEME_NAME", "\"$schemeName\"")
         buildConfigField("String", "APP_LABEL", "\"TapToPay Demo - $env\"")
         buildConfigField("String", "ENV", "\"$env\"")
+        buildConfigField("String", "APP_LINK_URL", "\"${localProperties["APP_LINK_URL"]}\"")
     }
 
     buildTypes {

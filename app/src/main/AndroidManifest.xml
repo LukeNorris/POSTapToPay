@@ -4,7 +4,10 @@
     android:versionCode="1"
     android:versionName="1.0"
     xmlns:tools="http://schemas.android.com/tools">
-
+    <queries>
+        <!-- Let us see the Adyen companion package -->
+        <package android:name="com.adyen.ipp.mobile.companion.test" />
+    </queries>
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
@@ -77,6 +80,7 @@
                     android:scheme="${schemeName}"
                     android:host="nexo" />
             </intent-filter>
+
         </activity>
     </application>
 
