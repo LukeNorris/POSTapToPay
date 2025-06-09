@@ -30,21 +30,12 @@ fun TransactionsScreen(
     val context = LocalContext.current
     val vm: ReferencedRefundViewModel = viewModel()
     val refundState by vm.refundState.collectAsState()
+
+    // Collect transactions directly from the ViewModel's StateFlow
+    val transactions by vm.transactions.collectAsState()
+
     val activity = context as? AppCompatActivity
         ?: throw IllegalStateException("TransactionsScreen must be hosted in an AppCompatActivity")
-
-    var transactions by remember { mutableStateOf(emptyList<TransactionRepository.Transaction>()) }
-
-    // Initial load
-    LaunchedEffect(Unit) {
-        transactions = TransactionRepository(context).getLastTransactions()
-    }
-    // Reload after a successful refund
-    LaunchedEffect(refundState) {
-        if (!refundState.isLoading && refundState.error == null) {
-            transactions = TransactionRepository(context).getLastTransactions()
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -103,8 +94,7 @@ fun TransactionsScreen(
                                         onClick = {
                                             vm.makeReferencedRefund(
                                                 activity = activity,
-                                                currency = tx.currency ?: "EUR",
-                                                amount   = tx.amount   ?: 0.0
+                                                transactionToRefund = tx // Pass the specific transaction
                                             )
                                         },
                                         modifier = Modifier.align(Alignment.End)
@@ -126,7 +116,6 @@ fun TransactionsScreen(
                 ) {
                     Button(onClick = {
                         vm.clearTransactionHistory()
-                        transactions = emptyList()  // immediately reflect the clear in UI
                     }) {
                         Text("Clear History")
                     }

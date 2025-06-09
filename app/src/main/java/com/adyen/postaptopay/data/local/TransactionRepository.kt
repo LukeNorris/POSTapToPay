@@ -18,6 +18,7 @@ class TransactionRepository(context: Context) {
     companion object {
         private const val TAG_HISTORY  = "TransactionRepo"
         private const val KEY_HISTORY  = "last5Transactions"
+        private const val KEY_PENDING_REFUND_TX_ID = "pendingRefundTransactionId" // NEW KEY
         private const val MAX_SIZE     = 5
     }
 
@@ -52,7 +53,7 @@ class TransactionRepository(context: Context) {
             )
         }
 
-        Log.d(TAG_HISTORY, "getLastTransactions: parsed ${list.size} transactions")
+        Log.d(TAG_HISTORY, "getLastTransactions: parsed ${list.size} transactions. First item refunded status: ${list.firstOrNull()?.isRefunded}")
         return list
     }
 
@@ -76,11 +77,21 @@ class TransactionRepository(context: Context) {
      * If the ID isn’t in the list, this is a no-op.
      */
     fun markTransactionRefunded(txId: String) {
-        val updated = getLastTransactions().map {
-            if (it.id == txId) it.copy(isRefunded = true) else it
+        Log.d(TAG_HISTORY, "markTransactionRefunded: Attempting to mark TX ID: $txId as refunded.")
+        val currentTransactions = getLastTransactions()
+        val updated = currentTransactions.map {
+            if (it.id == txId) {
+                Log.d(TAG_HISTORY, "markTransactionRefunded: Found TX ID $txId. Setting isRefunded to true.")
+                it.copy(isRefunded = true)
+            } else {
+                it
+            }
         }
         saveList(updated)
-        Log.d(TAG_HISTORY, "markTransactionRefunded: $txId")
+        // Verify immediately after saving
+        val savedTransactions = getLastTransactions()
+        val isSuccessfullyMarked = savedTransactions.any { it.id == txId && it.isRefunded }
+        Log.d(TAG_HISTORY, "markTransactionRefunded: TX ID $txId successfully marked as refunded in SharedPreferences: $isSuccessfullyMarked")
     }
 
     /**
@@ -110,5 +121,23 @@ class TransactionRepository(context: Context) {
             .putString(KEY_HISTORY, arr.toString())
             .apply()
         Log.d(TAG_HISTORY, "saveList: saved JSON = ${arr}")
+    }
+
+    /**
+     * Stores the ID of the transaction that is currently undergoing a refund process.
+     * This is used to persist the ID across potential process deaths.
+     */
+    fun savePendingRefundTxId(txId: String?) {
+        prefs.edit().putString(KEY_PENDING_REFUND_TX_ID, txId).apply()
+        Log.d(TAG_HISTORY, "savePendingRefundTxId: Stored pending refund TX ID: $txId")
+    }
+
+    /**
+     * Retrieves the ID of the transaction that is currently undergoing a refund process.
+     */
+    fun getPendingRefundTxId(): String? {
+        val txId = prefs.getString(KEY_PENDING_REFUND_TX_ID, null)
+        Log.d(TAG_HISTORY, "getPendingRefundTxId: Retrieved pending refund TX ID: $txId")
+        return txId
     }
 }
